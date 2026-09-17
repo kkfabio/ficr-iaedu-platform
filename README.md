@@ -1,87 +1,158 @@
 # FICR-IAEDU1A
 
-## Reformulação do projeto
+> Projeto acadêmico desenvolvido para a disciplina de **Inteligência Artificial** da **Faculdade Imaculada Conceição do Recife (FICR)**.
 
-O FICR-IAEDU1A está sendo reformulado: o protótipo original, construído com
-HTML e CSS por squads, dará lugar a uma aplicação educacional multiplataforma
-com um agente de inteligência artificial para responder às dúvidas dos usuários.
+## 📚 Sobre o projeto
 
-A reformulação mantém o objetivo acadêmico do projeto, mas cria uma base mais
-adequada para centralizar informações, orientar alunos e responsáveis e facilitar
-o acesso a conteúdos, avisos, atividades e serviços da instituição.
+O **FICR-IAEDU1A** é um projeto acadêmico desenvolvido no contexto da disciplina de **Inteligência Artificial** da Faculdade Imaculada Conceição do Recife (FICR).
 
-## Visão da nova solução
+O projeto parte de um protótipo educacional desenvolvido originalmente em **HTML e CSS por squads** e está passando por uma reformulação arquitetural. A proposta é transformar o protótipo em uma aplicação educacional multiplataforma integrada a um **agente de Inteligência Artificial**, capaz de auxiliar usuários na consulta de informações acadêmicas e institucionais.
 
-A aplicação será composta por:
+A nova versão busca centralizar informações, facilitar o acesso a conteúdos e serviços e oferecer um canal de atendimento baseado em IA, mantendo o projeto dentro de seu contexto **acadêmico e experimental**.
 
-- um aplicativo mobile desenvolvido com **React Native**;
-- uma API backend desenvolvida com **Java e Spring Boot**;
-- um agente conversacional implementado com **Spring AI**;
-- uma base de conhecimento formada por informações institucionais e conteúdos
-	educacionais autorizados;
-- recursos para encaminhar a conversa a um responsável quando a IA não puder
-	responder com segurança.
+> **Importante:** este projeto possui finalidade acadêmica e não representa um sistema oficial da Faculdade Imaculada Conceição do Recife.
 
-O agente deverá responder dúvidas frequentes sobre temas como calendário,
-atividades, comunicados, horários, serviços e orientações acadêmicas. Ele não
-deve inventar informações: quando não encontrar uma resposta confiável, deverá
-informar sua limitação e orientar o usuário para o canal apropriado.
+---
 
-## Arquitetura proposta
+## 🤖 Proposta da solução
+
+A nova aplicação será composta por diferentes camadas:
+
+* **Aplicativo mobile** desenvolvido com React Native;
+* **API Backend** desenvolvida com Java e Spring Boot;
+* **Agente de Inteligência Artificial** utilizando Spring AI;
+* **Base de conhecimento** contendo informações institucionais e conteúdos educacionais autorizados;
+* **Mecanismo de encaminhamento** para atendimento humano quando a IA não possuir informações suficientes para responder.
+
+O agente deverá auxiliar em dúvidas relacionadas a temas como:
+
+* Calendário acadêmico;
+* Atividades;
+* Comunicados;
+* Horários;
+* Serviços;
+* Orientações acadêmicas;
+* Informações institucionais.
+
+Um dos princípios do projeto é evitar respostas inventadas ou sem fundamentação. Quando não houver informações confiáveis na base de conhecimento, o agente deverá reconhecer sua limitação e orientar o usuário a procurar o canal de atendimento adequado.
+
+---
+
+## 🏗️ Arquitetura proposta
 
 ```text
-React Native (Android / iOS)
-							|
-							v
-		 API Spring Boot
-							|
-							v
-				Spring AI
-							|
-							v
- Base de conhecimento institucional
+                    ┌─────────────────────────┐
+                    │    React Native App     │
+                    │       Android / iOS     │
+                    └────────────┬────────────┘
+                                 │
+                                 ▼
+                    ┌─────────────────────────┐
+                    │      Spring Boot API    │
+                    │                         │
+                    │ Regras de negócio       │
+                    │ Autenticação            │
+                    │ Segurança               │
+                    │ Acesso aos dados        │
+                    └────────────┬────────────┘
+                                 │
+                                 ▼
+                    ┌─────────────────────────┐
+                    │       Spring AI         │
+                    │                         │
+                    │ Agente conversacional   │
+                    │ Integração com LLM       │
+                    └────────────┬────────────┘
+                                 │
+                                 ▼
+                    ┌─────────────────────────┐
+                    │ Base de Conhecimento    │
+                    │ Institucional/Educacional│
+                    └─────────────────────────┘
 ```
 
-O aplicativo será responsável pela experiência do usuário, autenticação e
-exibição das conversas. O backend concentrará as regras de negócio, a segurança,
-o acesso aos dados e a integração com o modelo de linguagem por meio do Spring AI.
+O aplicativo será responsável pela interface e experiência do usuário, enquanto o backend concentrará as regras de negócio, autenticação, segurança, acesso aos dados e integração com o agente de IA.
 
-## Objetivos da reformulação
+---
 
-1. Transformar os protótipos estáticos em uma aplicação mobile utilizável.
-2. Centralizar informações acadêmicas e institucionais em um único lugar.
-3. Oferecer respostas rápidas para dúvidas recorrentes.
-4. Preservar segurança, privacidade e rastreabilidade das interações.
-5. Criar uma arquitetura preparada para futuras integrações e novos serviços.
+## 🎯 Objetivos
 
-## Escopo inicial
+1. Transformar os protótipos estáticos em uma aplicação mobile funcional.
+2. Centralizar informações acadêmicas e institucionais.
+3. Utilizar Inteligência Artificial para auxiliar na resolução de dúvidas recorrentes.
+4. Garantir que as respostas do agente sejam baseadas em informações disponíveis e confiáveis.
+5. Criar uma arquitetura organizada e preparada para futuras integrações.
+6. Aplicar, na prática, conceitos estudados na disciplina de **Inteligência Artificial**.
 
-- aplicativo mobile com tela inicial, navegação e área de dúvidas;
-- cadastro e autenticação de usuários;
-- chat com histórico básico de conversas;
-- respostas baseadas na base de conhecimento da instituição;
-- encaminhamento de perguntas sem resposta para atendimento humano;
-- painel ou estrutura administrativa para atualização dos conteúdos.
+---
 
-## Estado atual e próximos passos
+## 📌 Escopo inicial
 
-O repositório ainda contém os protótipos originais em `squads/`, organizados por
-squad e páginas HTML. Eles serão usados como referência visual e de conteúdo
-durante a migração, sem que a estrutura atual limite a arquitetura da nova aplicação.
+* [ ] Aplicativo mobile com React Native;
+* [ ] Tela inicial e navegação;
+* [ ] Cadastro e autenticação de usuários;
+* [ ] Área de dúvidas;
+* [ ] Chat com histórico básico de conversas;
+* [ ] Integração com agente de IA;
+* [ ] Respostas baseadas na base de conhecimento;
+* [ ] Encaminhamento de perguntas para atendimento humano;
+* [ ] Estrutura para gerenciamento e atualização dos conteúdos.
 
-A implementação será feita por etapas:
+---
 
-1. definir requisitos, usuários e fontes oficiais de informação;
-2. especificar a arquitetura do backend e do aplicativo mobile;
-3. criar a API Spring Boot e o primeiro fluxo de perguntas e respostas com
-	 Spring AI;
-4. desenvolver as telas principais em React Native;
-5. integrar, testar e validar as respostas do agente;
-6. evoluir segurança, observabilidade e gerenciamento de conteúdo.
+## 🔄 Estado atual
 
-## Origem acadêmica
+O repositório ainda contém os **protótipos originais**, localizados no diretório `squads/` e organizados de acordo com as equipes que participaram da primeira etapa do projeto.
 
-O projeto foi originalmente criado para o experimento de IA assistiva da
-disciplina de Informática na Educação, com uso do GitHub Copilot e organização
-em squads. A documentação histórica e as instruções do experimento permanecem
-em `docs/INSTRUCTIONS.md`.
+Esses protótipos serão utilizados como **referência visual, estrutural e de conteúdo** durante a reformulação.
+
+A nova implementação não ficará limitada à arquitetura original em HTML e CSS, permitindo a construção de uma solução baseada em uma arquitetura moderna de aplicação mobile, API e Inteligência Artificial.
+
+---
+
+## 🚀 Próximos passos
+
+O desenvolvimento da nova versão será realizado de forma incremental:
+
+1. Levantamento e definição dos requisitos;
+2. Identificação dos usuários e suas necessidades;
+3. Definição das fontes oficiais de informação;
+4. Modelagem da arquitetura da aplicação;
+5. Desenvolvimento da API com Spring Boot;
+6. Implementação do agente utilizando Spring AI;
+7. Desenvolvimento das interfaces em React Native;
+8. Integração entre aplicativo, API e agente de IA;
+9. Testes e validação das respostas;
+10. Evolução dos mecanismos de segurança, observabilidade e gerenciamento de conteúdo.
+
+---
+
+## 🎓 Contexto acadêmico
+
+Este projeto faz parte das atividades acadêmicas da **disciplina de Inteligência Artificial** da **Faculdade Imaculada Conceição do Recife (FICR)**.
+
+A versão inicial do projeto foi desenvolvida como parte de um experimento relacionado ao uso de **IA assistiva**, utilizando ferramentas como o **GitHub Copilot** e uma dinâmica de desenvolvimento organizada em squads.
+
+A documentação histórica do projeto e as instruções referentes ao experimento original estão disponíveis em:
+
+```text
+docs/INSTRUCTIONS.md
+```
+
+---
+
+## 🛠️ Tecnologias previstas
+
+| Tecnologia       | Utilização                                   |
+| ---------------- | -------------------------------------------- |
+| **React Native** | Aplicativo mobile                            |
+| **Java**         | Desenvolvimento do backend                   |
+| **Spring Boot**  | API e regras de negócio                      |
+| **Spring AI**    | Integração e desenvolvimento do agente de IA |
+| **Git / GitHub** | Versionamento e colaboração                  |
+
+---
+
+## 📖 Observação
+
+Este repositório acompanha a evolução do projeto durante o desenvolvimento da disciplina. A arquitetura, tecnologias e funcionalidades apresentadas poderão sofrer alterações conforme os requisitos acadêmicos e os resultados obtidos durante a implementação.
