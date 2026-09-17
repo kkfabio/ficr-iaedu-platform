@@ -3,6 +3,8 @@ node_modules/
 dist/
 app/node_modules/
 app/dist/
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
 
 # Local environment and secrets
 .env
