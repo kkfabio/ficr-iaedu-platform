@@ -66,6 +66,7 @@ const scheduleItems = [
 ]
 
 const quickQuestions = ['Qual é a próxima atividade?', 'Onde vejo os comunicados?', 'Como falar com a secretaria?']
+const assistantApiUrl = import.meta.env.VITE_ASSISTANT_API_URL || 'http://localhost:8082/api/chat'
 
 function App() {
   const [activePage, setActivePage] = useState('home')
@@ -73,15 +74,34 @@ function App() {
   const [chatOpen, setChatOpen] = useState(false)
   const [question, setQuestion] = useState('')
   const [answer, setAnswer] = useState('Olá! Sou a assistente FICR. Como posso ajudar?')
+  const [isAsking, setIsAsking] = useState(false)
 
-  function askQuestion(event) {
+  async function askQuestion(event) {
     event.preventDefault()
     const normalizedQuestion = question.trim()
 
-    if (!normalizedQuestion) return
+    if (!normalizedQuestion || isAsking) return
 
-    setAnswer(`Recebi sua dúvida sobre “${normalizedQuestion}”. Em breve vou consultar a base oficial da instituição para responder com segurança.`)
-    setQuestion('')
+    setIsAsking(true)
+
+    try {
+      const response = await fetch(assistantApiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: normalizedQuestion }),
+      })
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+
+      const data = await response.json()
+      setAnswer(data.answer || 'Não consegui encontrar uma resposta para essa dúvida.')
+      setQuestion('')
+    } catch (error) {
+      console.error('Falha ao consultar o assistente:', error)
+      setAnswer('Não consegui conectar ao assistente. Verifique se o backend está rodando na porta 8082.')
+    } finally {
+      setIsAsking(false)
+    }
   }
 
   function selectQuestion(selectedQuestion) {
@@ -201,7 +221,7 @@ function App() {
         </> : activePage === 'agenda' ? <AgendaPage /> : activePage === 'announcements' ? <AnnouncementsPage /> : <HelpPage onChat={() => setChatOpen(true)} />}
       </main>
 
-      {chatOpen && <ChatPanel answer={answer} question={question} setQuestion={setQuestion} askQuestion={askQuestion} selectQuestion={selectQuestion} onClose={() => setChatOpen(false)} />}
+      {chatOpen && <ChatPanel answer={answer} question={question} setQuestion={setQuestion} askQuestion={askQuestion} selectQuestion={selectQuestion} isAsking={isAsking} onClose={() => setChatOpen(false)} />}
     </div>
   )
 }
@@ -278,8 +298,8 @@ function Announcement({ tag, title, date, color }) {
   return <article className="rounded-2xl border border-[#dce6f2] bg-white p-4 transition hover:-translate-y-0.5 hover:shadow-md"><div className="flex items-center justify-between gap-3"><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${color}`}>{tag}</span><span className="text-xs text-[#8b9aae]">{date}</span></div><h3 className="mt-3 text-sm font-bold leading-5 text-[#173f70]">{title}</h3><button className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[#276ef1]">Ler comunicado <ArrowUpRight size={13} /></button></article>
 }
 
-function ChatPanel({ answer, question, setQuestion, askQuestion, selectQuestion, onClose }) {
-  return <aside className="fixed bottom-4 right-4 z-20 flex w-[calc(100%-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-[#dce6f2] bg-white shadow-2xl shadow-[#173f70]/20" aria-label="Assistente FICR"><div className="flex items-center justify-between bg-[#173f70] px-5 py-4 text-white"><div className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#276ef1]"><Sparkles size={18} /></span><div><p className="text-sm font-bold">Assistente FICR</p><p className="text-xs text-[#b9d5f7]">Online para ajudar</p></div></div><button onClick={onClose} className="text-[#b9d5f7] transition hover:text-white" aria-label="Fechar assistente"><X size={19} /></button></div><div className="max-h-[23rem] space-y-4 overflow-y-auto p-5"><div className="rounded-2xl rounded-tl-sm bg-[#edf4fc] p-3 text-sm leading-5 text-[#385572]">{answer}</div><div><p className="mb-2 text-xs font-bold uppercase tracking-wider text-[#8b9aae]">Perguntas rápidas</p><div className="flex flex-wrap gap-2">{quickQuestions.map((item) => <button key={item} onClick={() => selectQuestion(item)} className="rounded-full border border-[#dce6f2] px-3 py-2 text-left text-xs font-semibold text-[#53657b] transition hover:border-[#276ef1] hover:text-[#276ef1]">{item}</button>)}</div></div></div><form onSubmit={askQuestion} className="flex gap-2 border-t border-[#edf1f6] p-4"><input value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Digite sua dúvida..." className="min-w-0 flex-1 rounded-xl border border-[#dce6f2] bg-[#f7f9fc] px-3 py-2.5 text-sm outline-none transition placeholder:text-[#9aaabd] focus:border-[#276ef1]" aria-label="Sua dúvida" /><button type="submit" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#276ef1] text-white transition hover:bg-[#1d5cbb]" aria-label="Enviar dúvida"><Send size={17} /></button></form></aside>
+function ChatPanel({ answer, question, setQuestion, askQuestion, selectQuestion, isAsking, onClose }) {
+  return <aside className="fixed bottom-4 right-4 z-20 flex w-[calc(100%-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-[#dce6f2] bg-white shadow-2xl shadow-[#173f70]/20" aria-label="Assistente FICR"><div className="flex items-center justify-between bg-[#173f70] px-5 py-4 text-white"><div className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#276ef1]"><Sparkles size={18} /></span><div><p className="text-sm font-bold">Assistente FICR</p><p className="text-xs text-[#b9d5f7]">Online para ajudar</p></div></div><button onClick={onClose} className="text-[#b9d5f7] transition hover:text-white" aria-label="Fechar assistente"><X size={19} /></button></div><div className="max-h-[23rem] space-y-4 overflow-y-auto p-5"><div className="rounded-2xl rounded-tl-sm bg-[#edf4fc] p-3 text-sm leading-5 text-[#385572]">{answer}</div><div><p className="mb-2 text-xs font-bold uppercase tracking-wider text-[#8b9aae]">Perguntas rápidas</p><div className="flex flex-wrap gap-2">{quickQuestions.map((item) => <button key={item} onClick={() => selectQuestion(item)} disabled={isAsking} className="rounded-full border border-[#dce6f2] px-3 py-2 text-left text-xs font-semibold text-[#53657b] transition hover:border-[#276ef1] hover:text-[#276ef1] disabled:opacity-50">{item}</button>)}</div></div></div><form onSubmit={askQuestion} className="flex gap-2 border-t border-[#edf1f6] p-4"><input value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={isAsking ? 'Consultando...' : 'Digite sua dúvida...'} disabled={isAsking} className="min-w-0 flex-1 rounded-xl border border-[#dce6f2] bg-[#f7f9fc] px-3 py-2.5 text-sm outline-none transition placeholder:text-[#9aaabd] focus:border-[#276ef1] disabled:opacity-60" aria-label="Sua dúvida" /><button type="submit" disabled={isAsking} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#276ef1] text-white transition hover:bg-[#1d5cbb] disabled:cursor-wait disabled:opacity-60" aria-label="Enviar dúvida"><Send size={17} /></button></form></aside>
 }
 
 export default App
