@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   ArrowUpRight,
   Bell,
@@ -66,47 +66,75 @@ const scheduleItems = [
 ]
 
 const quickQuestions = ['Qual é a próxima atividade?', 'Onde vejo os comunicados?', 'Como falar com a secretaria?']
-const assistantApiUrl = import.meta.env.VITE_ASSISTANT_API_URL || 'http://localhost:8082/api/chat'
+const assistantApiUrl = import.meta.env.VITE_ASSISTANT_API_URL || 'http://localhost:8080/api/chat'
 
 function App() {
   const [activePage, setActivePage] = useState('home')
   const [menuOpen, setMenuOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
   const [question, setQuestion] = useState('')
-  const [answer, setAnswer] = useState('Olá! Sou a assistente FICR. Como posso ajudar?')
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      role: 'assistant',
+      content: 'Olá! Sou a assistente inteligente da FICR. Posso tirar dúvidas sobre calendário letivo, datas de provas, horários, comunicados, contatos da secretaria e normas acadêmicas. Como posso ajudar?',
+    },
+  ])
   const [isAsking, setIsAsking] = useState(false)
 
-  async function askQuestion(event) {
-    event.preventDefault()
-    const normalizedQuestion = question.trim()
+  async function askQuestion(event, customQuestion) {
+    if (event) event.preventDefault()
+    const queryText = (customQuestion || question).trim()
 
-    if (!normalizedQuestion || isAsking) return
+    if (!queryText || isAsking) return
 
+    const userMsg = { id: Date.now(), role: 'user', content: queryText }
+    const nextHistory = [...messages, userMsg]
+    setMessages(nextHistory)
+    setQuestion('')
     setIsAsking(true)
+
+    const historyPayload = nextHistory.slice(0, -1).map((m) => ({
+      role: m.role,
+      content: m.content,
+    }))
 
     try {
       const response = await fetch(assistantApiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: normalizedQuestion }),
+        body: JSON.stringify({ question: queryText, history: historyPayload }),
       })
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
 
       const data = await response.json()
-      setAnswer(data.answer || 'Não consegui encontrar uma resposta para essa dúvida.')
-      setQuestion('')
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          role: 'assistant',
+          content: data.answer || 'Não consegui encontrar uma resposta para essa dúvida.',
+        },
+      ])
     } catch (error) {
       console.error('Falha ao consultar o assistente:', error)
-      setAnswer('Não consegui conectar ao assistente. Verifique se o backend está rodando na porta 8082.')
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          role: 'assistant',
+          content: 'Não foi possível conectar ao backend da assistente. Verifique se o servidor Spring Boot está rodando na porta 8080.',
+        },
+      ])
     } finally {
       setIsAsking(false)
     }
   }
 
   function selectQuestion(selectedQuestion) {
-    setQuestion(selectedQuestion)
     setChatOpen(true)
+    askQuestion(null, selectedQuestion)
   }
 
   function navigate(page) {
@@ -221,7 +249,7 @@ function App() {
         </> : activePage === 'agenda' ? <AgendaPage /> : activePage === 'announcements' ? <AnnouncementsPage /> : <HelpPage onChat={() => setChatOpen(true)} />}
       </main>
 
-      {chatOpen && <ChatPanel answer={answer} question={question} setQuestion={setQuestion} askQuestion={askQuestion} selectQuestion={selectQuestion} isAsking={isAsking} onClose={() => setChatOpen(false)} />}
+      {chatOpen && <ChatPanel messages={messages} question={question} setQuestion={setQuestion} askQuestion={askQuestion} selectQuestion={selectQuestion} isAsking={isAsking} onClose={() => setChatOpen(false)} />}
     </div>
   )
 }
@@ -298,8 +326,95 @@ function Announcement({ tag, title, date, color }) {
   return <article className="rounded-2xl border border-[#dce6f2] bg-white p-4 transition hover:-translate-y-0.5 hover:shadow-md"><div className="flex items-center justify-between gap-3"><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${color}`}>{tag}</span><span className="text-xs text-[#8b9aae]">{date}</span></div><h3 className="mt-3 text-sm font-bold leading-5 text-[#173f70]">{title}</h3><button className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[#276ef1]">Ler comunicado <ArrowUpRight size={13} /></button></article>
 }
 
-function ChatPanel({ answer, question, setQuestion, askQuestion, selectQuestion, isAsking, onClose }) {
-  return <aside className="fixed bottom-4 right-4 z-20 flex w-[calc(100%-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-[#dce6f2] bg-white shadow-2xl shadow-[#173f70]/20" aria-label="Assistente FICR"><div className="flex items-center justify-between bg-[#173f70] px-5 py-4 text-white"><div className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#276ef1]"><Sparkles size={18} /></span><div><p className="text-sm font-bold">Assistente FICR</p><p className="text-xs text-[#b9d5f7]">Online para ajudar</p></div></div><button onClick={onClose} className="text-[#b9d5f7] transition hover:text-white" aria-label="Fechar assistente"><X size={19} /></button></div><div className="max-h-[23rem] space-y-4 overflow-y-auto p-5"><div className="rounded-2xl rounded-tl-sm bg-[#edf4fc] p-3 text-sm leading-5 text-[#385572]">{answer}</div><div><p className="mb-2 text-xs font-bold uppercase tracking-wider text-[#8b9aae]">Perguntas rápidas</p><div className="flex flex-wrap gap-2">{quickQuestions.map((item) => <button key={item} onClick={() => selectQuestion(item)} disabled={isAsking} className="rounded-full border border-[#dce6f2] px-3 py-2 text-left text-xs font-semibold text-[#53657b] transition hover:border-[#276ef1] hover:text-[#276ef1] disabled:opacity-50">{item}</button>)}</div></div></div><form onSubmit={askQuestion} className="flex gap-2 border-t border-[#edf1f6] p-4"><input value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={isAsking ? 'Consultando...' : 'Digite sua dúvida...'} disabled={isAsking} className="min-w-0 flex-1 rounded-xl border border-[#dce6f2] bg-[#f7f9fc] px-3 py-2.5 text-sm outline-none transition placeholder:text-[#9aaabd] focus:border-[#276ef1] disabled:opacity-60" aria-label="Sua dúvida" /><button type="submit" disabled={isAsking} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#276ef1] text-white transition hover:bg-[#1d5cbb] disabled:cursor-wait disabled:opacity-60" aria-label="Enviar dúvida"><Send size={17} /></button></form></aside>
+function ChatPanel({ messages, question, setQuestion, askQuestion, selectQuestion, isAsking, onClose }) {
+  const chatEndRef = useRef(null)
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, isAsking])
+
+  return (
+    <aside className="fixed bottom-4 right-4 z-30 flex h-[34rem] w-[calc(100%-2rem)] max-w-md flex-col overflow-hidden rounded-2xl border border-[#dce6f2] bg-white shadow-2xl shadow-[#173f70]/25" aria-label="Assistente FICR">
+      <div className="flex items-center justify-between bg-[#173f70] px-5 py-4 text-white">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#276ef1]">
+            <Sparkles size={18} />
+          </span>
+          <div>
+            <p className="text-sm font-bold">Assistente FICR · IA</p>
+            <p className="text-xs text-[#b9d5f7]">Google Gemini Integrado</p>
+          </div>
+        </div>
+        <button onClick={onClose} className="text-[#b9d5f7] transition hover:text-white" aria-label="Fechar assistente">
+          <X size={19} />
+        </button>
+      </div>
+
+      <div className="flex-1 space-y-3 overflow-y-auto p-4">
+        {messages.map((msg) => (
+          <div
+            key={msg.id}
+            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+          >
+            <div
+              className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-line ${
+                msg.role === 'user'
+                  ? 'rounded-tr-sm bg-[#276ef1] text-white shadow-sm'
+                  : 'rounded-tl-sm border border-[#dce6f2] bg-[#edf4fc] text-[#15243b]'
+              }`}
+            >
+              {msg.content}
+            </div>
+          </div>
+        ))}
+
+        {isAsking && (
+          <div className="flex justify-start">
+            <div className="flex items-center gap-2 rounded-2xl rounded-tl-sm border border-[#dce6f2] bg-[#edf4fc] px-4 py-3 text-xs text-[#53657b]">
+              <span className="h-2 w-2 animate-ping rounded-full bg-[#276ef1]" />
+              Consultando base institucional da FICR...
+            </div>
+          </div>
+        )}
+        <div ref={chatEndRef} />
+      </div>
+
+      <div className="border-t border-[#edf1f6] bg-[#fafcff] px-4 py-2.5">
+        <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-[#8b9aae]">Sugestões rápidas</p>
+        <div className="flex flex-wrap gap-1.5">
+          {quickQuestions.map((item) => (
+            <button
+              key={item}
+              onClick={() => selectQuestion(item)}
+              disabled={isAsking}
+              className="rounded-full border border-[#dce6f2] bg-white px-2.5 py-1 text-left text-xs font-semibold text-[#53657b] transition hover:border-[#276ef1] hover:text-[#276ef1] disabled:opacity-50"
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <form onSubmit={askQuestion} className="flex gap-2 border-t border-[#edf1f6] p-3">
+        <input
+          value={question}
+          onChange={(event) => setQuestion(event.target.value)}
+          placeholder={isAsking ? 'Aguarde a resposta...' : 'Digite sua dúvida...'}
+          disabled={isAsking}
+          className="min-w-0 flex-1 rounded-xl border border-[#dce6f2] bg-[#f7f9fc] px-3.5 py-2.5 text-sm outline-none transition placeholder:text-[#9aaabd] focus:border-[#276ef1] disabled:opacity-60"
+          aria-label="Sua dúvida"
+        />
+        <button
+          type="submit"
+          disabled={isAsking || !question.trim()}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#276ef1] text-white transition hover:bg-[#1d5cbb] disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label="Enviar dúvida"
+        >
+          <Send size={17} />
+        </button>
+      </form>
+    </aside>
+  )
 }
 
 export default App

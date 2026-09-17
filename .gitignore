@@ -1,17 +1,36 @@
-# Frontend dependencies and generated files
+# --- Frontend (Node / Vite) ---
 node_modules/
 dist/
+.vite/
 app/node_modules/
 app/dist/
+app/.vite/
+
+# --- Backend (Java / Maven) ---
+target/
 backend/target/
 backend/.mvn/wrapper/maven-wrapper.jar
+*.class
+*.log
 
-# Local environment and secrets
+# --- Local Environment and Secrets ---
 .env
 .env.*
 !.env.example
 
-# Legacy project material not needed by the React application
+# --- IDEs and Editors ---
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+
+# --- Operating System Files ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Legacy project material not needed by the repository ---
 scripts/
 squads/
 assignments.xlsx
@@ -19,4 +38,3 @@ docs/
 .devcontainer/
 .github/
 .stylelintrc.json
-.vscode/
